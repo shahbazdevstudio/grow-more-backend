@@ -12,7 +12,7 @@ Frontend/  index.html · css · js (core) · components · pages · assets · to
 ```bash
 cd Backend && npm install && cd ../Frontend && npm install && cd ..
 # terminal 1: cd Backend && npm run dev   (API on :5000)
-# terminal 2: cd Frontend && npm run dev  (app on http://localhost:5173)
+# terminal 2: cd Frontend && npm run dev  (app on :5173, proxies /api to the production backend)
 ```
 `Backend/.env` and `Frontend/.env` are already filled in. **First start:** because no owner exists yet, the server creates it with
 `INITIAL_PIN` (**1973**). Log in with 1973, then delete the `INITIAL_PIN` line from `Backend/.env`.
@@ -21,9 +21,9 @@ Database: `growmore_phase2` on your Atlas cluster. To set/reset the PIN later: `
 ## Deploy on Vercel (two projects: Backend + Frontend)
 1. **MongoDB Atlas -> Network Access -> 0.0.0.0/0** (Vercel has no fixed IP).
 2. **Backend project:** Vercel -> Add New -> Project -> import the repo, **Root Directory = `Backend`**, Framework "Other".
-   Settings -> Environment Variables: paste `Backend/.env.vercel`. Also set `CLIENT_ORIGIN` = your Frontend URL (e.g. `https://grow-more.vercel.app`). Deploy -> note its URL.
+   Settings -> Environment Variables: paste `Backend/.env.vercel`. Also set `CLIENT_ORIGIN` = your Frontend URL (e.g. `https://grow-more-shahbaz.vercel.app`). Deploy -> note its URL.
 3. **Frontend project:** import the same repo, **Root Directory = `Frontend`**, Framework "Other" (vercel.json sets the build).
-   Before deploying, open `Frontend/vercel.json` and replace `https://YOUR-BACKEND.vercel.app` with the Backend URL from step 2.
+   Before deploying, open `Frontend/vercel.json` and replace `https://grow-more-backend-ten.vercel.app` with the Backend URL from step 2.
    The Frontend proxies `/api/*` to the Backend, so the browser only ever talks to one domain (cookies stay first-party, no CORS problems).
 4. Open the Frontend URL and log in with PIN **1973** (created on the first request). Then delete `INITIAL_PIN` in the Backend project and redeploy.
 

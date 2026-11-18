@@ -11,7 +11,7 @@ exports.parseAccount = (b = {}) => {
     name: v.str(b.name, 'Account name', { required: true, max: 60 }),
     type: v.oneOf(b.type, C.ACCOUNT_TYPES, 'Account type'),
     description: v.str(b.description, 'Description', { max: 300 }),
-    openingBalance: v.money(b.openingBalance, 'Balance', { required: false, allowZero: true, allowNegative: true, def: 0 }),
+    openingBalance: v.money(b.openingBalance, 'Balance', { required: false, allowZero: true, allowNegative: false, def: 0 }),
     logoKey,
     logoData,
     color: v.hexColor(b.color, 'Colour', '#34D399'),

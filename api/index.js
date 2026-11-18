@@ -1,6 +1,7 @@
 /**
- * Vercel serverless entry: every request is rewritten here (see ../vercel.json) and handled by the
- * same Express app that `server.js` runs locally. The MongoDB connection is cached between requests.
+ * Vercel serverless entry for the Grow More API (Backend/ is deployed as its own Vercel project).
+ * Every /api/* request is rewritten here (see vercel.json) and handled by the same Express app that server.js runs locally.
+ * The MongoDB connection is cached between requests.
  */
 let app;
 let ready;

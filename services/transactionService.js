@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const { Transaction, Category } = require('../models');
 const ApiError = require('../utils/ApiError');
 const { dto } = require('../utils/dto');
-const { oid } = require('./balanceService');
+const { oid, effect, combine, assertNoOverdraft } = require('./balanceService');
 const { getOwned } = require('./accountService');
 const { r2 } = require('../utils/money');
 const { escapeRegex } = require('../utils/text');
@@ -30,6 +30,7 @@ async function create(userId, data) {
     if (dup) return { transaction: dto(dup), duplicate: true };
   }
   await checkRefs(userId, data);
+  await assertNoOverdraft(userId, effect(data));
   try {
     const tx = await Transaction.create({ ...data, user: userId });
     return { transaction: dto(tx), duplicate: false };
@@ -54,6 +55,7 @@ async function update(userId, id, data) {
   const tx = await getLive(userId, id);
   if (tx.module) throw managed(tx);
   await checkRefs(userId, data, tx);
+  await assertNoOverdraft(userId, combine([effect(data), 1], [effect(tx), -1]));
   delete data.clientRequestId;
   tx.set({ ...data, toAccount: data.toAccount || null, category: data.category || null });
   await tx.save();
@@ -63,6 +65,7 @@ async function update(userId, id, data) {
 async function remove(userId, id) {
   const tx = await getLive(userId, id);
   if (tx.module) throw managed(tx);
+  await assertNoOverdraft(userId, combine([effect(tx), -1])); // deleting an income/transfer-in would take money away
   tx.deletedAt = new Date();
   await tx.save();
   return dto(tx);
@@ -74,6 +77,7 @@ async function restore(userId, id) {
   if (tx.module) throw managed(tx);
   await getOwned(userId, tx.account).catch(() => { throw new ApiError(409, 'The account for this transaction no longer exists.', 'CONFLICT'); });
   if (tx.toAccount) await getOwned(userId, tx.toAccount).catch(() => { throw new ApiError(409, 'The destination account no longer exists.', 'CONFLICT'); });
+  await assertNoOverdraft(userId, effect(tx));
   tx.deletedAt = null;
   await tx.save();
   return dto(tx);

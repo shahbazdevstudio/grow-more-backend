@@ -22,6 +22,7 @@ function createApp() {
     exposedHeaders: ['Content-Disposition'],
     maxAge: 600,
   }));
+  app.get(['/', '/api/health'], noStore, (_req, res) => res.json({ ok: true, service: 'grow-more-api' }));
   app.use(express.json({ limit: '700kb' })); // room for one resized image (sent as a data URI and forwarded to Cloudinary)
   app.use(cookieParser());
   app.use('/api', noStore, apiLimiter, rejectOperators, csrfGuard, routes);

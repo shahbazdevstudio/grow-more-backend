@@ -19,9 +19,10 @@ const env = {
   mongoDb: process.env.MONGODB_DB || 'growmore_v2',
   jwtSecret: required('JWT_SECRET', { minLength: 32 }),
   pinPepper: required('PIN_PEPPER', { minLength: 32 }),
-  clientOrigins: (process.env.CLIENT_ORIGIN || 'http://localhost:5173').split(',').map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean),
-  cookieSameSite: (process.env.COOKIE_SAMESITE || (isProd ? 'none' : 'lax')).toLowerCase(),
-  cookieSecure: process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE === 'true' : isProd,
+  // The production frontend is always allowed (so a missing CLIENT_ORIGIN can never cause a CORS error); CLIENT_ORIGIN may add more.
+  clientOrigins: [...new Set(['https://grow-more-shahbaz.vercel.app', ...(process.env.CLIENT_ORIGIN || '').split(',')].map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean))],
+  cookieSameSite: (process.env.COOKIE_SAMESITE || 'none').toLowerCase(),
+  cookieSecure: process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE === 'true' : !isTest,
   trustProxy: process.env.TRUST_PROXY || '0',
   defaultTimezone: process.env.DEFAULT_TIMEZONE || 'Asia/Karachi',
   bcryptRounds: isTest ? 4 : 12,
