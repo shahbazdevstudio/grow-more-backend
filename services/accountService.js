@@ -1,6 +1,6 @@
 const { Account, Transaction, SavingsGoal } = require('../models');
 const ApiError = require('../utils/ApiError');
-const { accountsWithBalances, balanceOf, assertNoOverdraft } = require('./balanceService');
+const { accountsWithBalances, balanceOf } = require('./balanceService');
 const { dto } = require('../utils/dto');
 const images = require('./imageService');
 
@@ -25,8 +25,6 @@ async function create(userId, data) {
 async function update(userId, id, data) {
   const acc = await getOwned(userId, id);
   if (acc.archived) throw new ApiError(400, 'Restore this account before editing it.', 'ARCHIVED');
-  // Lowering the opening balance must not push the account below zero.
-  await assertNoOverdraft(userId, { [String(id)]: (data.openingBalance || 0) - (acc.openingBalance || 0) });
   const img = await images.prepare(data.logoData, { sub: 'accounts', current: { url: acc.logoData, publicId: acc.logoPublicId } });
   acc.set({ ...data, logoData: img.url, logoPublicId: img.publicId });
   try { await acc.save(); } catch (e) { await img.rollback(); throw dupName(e) || e; }

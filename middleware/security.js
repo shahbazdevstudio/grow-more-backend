@@ -3,17 +3,12 @@ const env = require('../config/env');
 
 const SAFE = new Set(['GET', 'HEAD', 'OPTIONS']);
 
-/** Same-origin deployments (frontend + API on one Vercel domain): the Origin's host equals the Host the request was sent to. */
-function sameHost(origin, host) {
-  try { return !!host && new URL(origin).host === host; } catch { return false; }
-}
-
 /** CSRF defence for cookie auth: state-changing calls need our custom header (forces a CORS preflight) and an allowed Origin. */
 function csrfGuard(req, _res, next) {
   if (SAFE.has(req.method)) return next();
   if (req.get('X-Requested-With') !== 'GrowMore') throw new ApiError(403, 'Request blocked.', 'FORBIDDEN');
   const origin = req.get('Origin');
-  if (origin && !env.clientOrigins.includes(origin) && !(env.isProd && sameHost(origin, req.get('host')))) throw new ApiError(403, 'Request blocked.', 'FORBIDDEN');
+  if (origin && !env.clientOrigins.includes(origin)) throw new ApiError(403, 'Request blocked.', 'FORBIDDEN');
   next();
 }
 

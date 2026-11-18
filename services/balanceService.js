@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const { Account, Transaction } = require('../models');
 const { r2 } = require('../utils/money');
-const ApiError = require('../utils/ApiError');
 
 const oid = (id) => new mongoose.Types.ObjectId(String(id));
 const sumIf = (type) => ({ $sum: { $cond: [{ $eq: ['$type', type] }, '$amount', 0] } });
@@ -48,42 +47,4 @@ async function balanceOf(userId, accountId) {
   return account ? balanceFrom(account, ledger.get(String(accountId))) : null;
 }
 
-/* ---------- Overdraft guard: no account (bank, JazzCash, Easypaisa, cash, savings...) may ever go below zero ---------- */
-
-/** What one ledger row does to each account: { accountId: +/-amount }. */
-function effect(t) {
-  const out = {};
-  const add = (id, n) => { if (id) out[String(id)] = r2((out[String(id)] || 0) + n); };
-  if (!t) return out;
-  if (t.type === 'income') add(t.account, t.amount);
-  else if (t.type === 'expense') add(t.account, -t.amount);
-  else if (t.type === 'transfer') { add(t.account, -t.amount); add(t.toAccount, t.amount); }
-  return out;
-}
-
-/** Combines effects: sign = +1 adds them, -1 subtracts them (e.g. delta of an edit = new - old). */
-function combine(...parts) {
-  const out = {};
-  for (const [eff, sign] of parts) for (const [id, n] of Object.entries(eff || {})) out[id] = r2((out[id] || 0) + sign * n);
-  return out;
-}
-
-/**
- * Throws (409) if applying `delta` ({accountId: change}) would push an account below zero.
- * Only accounts that LOSE money are checked, and an account that is already negative is allowed to stay as it is
- * (it just cannot get worse), so old data never blocks harmless edits.
- */
-async function assertNoOverdraft(userId, delta) {
-  const ids = Object.keys(delta).filter((id) => delta[id] < -0.004);
-  if (!ids.length) return;
-  const [accounts, ledger] = await Promise.all([Account.find({ user: userId, _id: { $in: ids } }).lean(), ledgerByAccount(userId)]);
-  for (const a of accounts) {
-    const have = balanceFrom(a, ledger.get(String(a._id)));
-    const after = r2(have + delta[String(a._id)]);
-    if (after < -0.004) {
-      throw new ApiError(409, `Not enough balance in "${a.name}". Available: Rs ${have.toLocaleString('en-US', { maximumFractionDigits: 2 })}, needed: Rs ${r2(-delta[String(a._id)]).toLocaleString('en-US', { maximumFractionDigits: 2 })}. A balance cannot go below zero.`, 'INSUFFICIENT_FUNDS', { account: String(a._id), available: have });
-    }
-  }
-}
-
-module.exports = { accountsWithBalances, balanceOf, ledgerByAccount, oid, effect, combine, assertNoOverdraft };
+module.exports = { accountsWithBalances, balanceOf, ledgerByAccount, oid };
