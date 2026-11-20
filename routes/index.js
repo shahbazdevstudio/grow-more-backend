@@ -15,6 +15,8 @@ const coding = require('../controllers/coding.controller');
 const daraz = require('../controllers/daraz.controller');
 const trading = require('../controllers/trading.controller');
 const notes = require('../controllers/notes.controller');
+const challenges = require('../controllers/challenges.controller');
+const timetable = require('../controllers/timetable.controller');
 
 // ---- public ----
 router.get('/health', (_req, res) => res.json({ ok: true }));
@@ -30,6 +32,7 @@ router.get('/info', me.info);
 router.put('/me/settings', me.updateSettings);
 router.post('/me/pin', pinLimiter, me.changePin);
 router.post('/me/sessions/revoke', me.revokeSessions);
+router.post('/me/reset', pinLimiter, me.resetData);
 
 router.get('/dashboard', dashboard.get);
 
@@ -121,6 +124,21 @@ router.put('/todos/:id', notes.todoUpdate);
 router.put('/todos/:id/complete', notes.todoComplete);
 router.delete('/todos/:id', notes.todoRemove);
 router.post('/todos/:id/restore', notes.todoRestore);
+
+// ---- Challenges & timetable ----
+router.get('/challenges', challenges.list);
+router.post('/challenges', challenges.create);
+router.get('/challenges/:id', challenges.get);
+router.put('/challenges/:id', challenges.update);
+router.put('/challenges/:id/days/:date', challenges.setTask);
+router.delete('/challenges/:id', challenges.remove);
+router.post('/challenges/:id/restore', challenges.restore);
+
+router.get('/timetable', timetable.list);
+router.post('/timetable', timetable.create);
+router.put('/timetable/:id', timetable.update);
+router.delete('/timetable/:id', timetable.remove);
+router.post('/timetable/:id/restore', timetable.restore);
 
 router.get('/data/export.json', data.exportJson);
 router.get('/data/transactions.csv', data.exportCsv);

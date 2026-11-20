@@ -15,4 +15,6 @@ Object.assign(module.exports, {
   TradingTransaction: require('./TradingTransaction'),
   Note: require('./Note'),
   Todo: require('./Todo'),
+  Challenge: require('./Challenge'),
+  TimetableEntry: require('./TimetableEntry'),
 });

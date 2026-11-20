@@ -25,12 +25,18 @@ async function list(userId, tz, f) {
   const match = { user: oid(userId), deletedAt: null };
   if (f.status === 'pending') match.completed = false; if (f.status === 'completed') match.completed = true;
   if (f.q) { const re = new RegExp(escapeRegex(f.q), 'i'); match.$or = [{ title: re }, { description: re }]; }
+  const tomorrow = D.addDays(today, 1);
+  // date filters: today / tomorrow / old (anything with a due date before today); "all" leaves the list untouched
+  const whenMatch = { today: { dueDate: today }, tomorrow: { dueDate: tomorrow }, old: { dueDate: { $ne: null, $lt: today } } };
+  const whenCounts = { all: await Todo.countDocuments(match) };
+  await Promise.all(Object.entries(whenMatch).map(async ([k, m]) => { whenCounts[k] = await Todo.countDocuments({ ...match, ...m }); }));
+  if (whenMatch[f.when]) Object.assign(match, whenMatch[f.when]);
   const total = await Todo.countDocuments(match);
   // pending: overdue → soonest → undated;  completed: newest first
   const rows = f.status === 'completed'
     ? await Todo.find(match).sort({ completedAt: -1, _id: -1 }).skip((f.page - 1) * f.limit).limit(f.limit).lean()
     : await Todo.aggregate([{ $match: match }, { $addFields: { _noDue: { $cond: [{ $eq: ['$dueDate', null] }, 1, 0] } } }, { $sort: { completed: 1, _noDue: 1, dueDate: 1, createdAt: -1 } }, { $skip: (f.page - 1) * f.limit }, { $limit: f.limit }]);
-  return { items: rows.map((r) => ({ ...dto(r), _noDue: undefined, overdue: !r.completed && !!r.dueDate && r.dueDate < today, dueToday: !r.completed && r.dueDate === today })), pagination: { page: f.page, limit: f.limit, total, pages: Math.max(1, Math.ceil(total / f.limit)) }, counts: await counts(userId, today), today };
+  return { items: rows.map((r) => ({ ...dto(r), _noDue: undefined, overdue: !r.completed && !!r.dueDate && r.dueDate < today, dueToday: !r.completed && r.dueDate === today })), pagination: { page: f.page, limit: f.limit, total, pages: Math.max(1, Math.ceil(total / f.limit)) }, counts: await counts(userId, today), whenCounts, today, tomorrow };
 }
 const create = async (userId, data) => dto(await Todo.create({ ...data, user: userId }));
 async function update(userId, id, data) { const t = await getLive(userId, id); t.set(data); await t.save(); return dto(t); }

@@ -1,9 +1,9 @@
-const { User, Account, Category, Transaction, Budget, SavingsGoal, CodingRecord, DarazProduct, DarazStockMovement, DarazExpense, TradingAsset, TradingTransaction, Note, Todo } = require('../models');
+const { User, Account, Category, Transaction, Budget, SavingsGoal, CodingRecord, DarazProduct, DarazStockMovement, DarazExpense, TradingAsset, TradingTransaction, Note, Todo, Challenge, TimetableEntry } = require('../models');
 const { dto } = require('../utils/dto');
 const C = require('../config/constants');
 
 async function fullExport(userId) {
-  const [user, accounts, categories, transactions, budget, goals, coding, dProducts, dMoves, dExpenses, tAssets, tTrades, notes, todos] = await Promise.all([
+  const [user, accounts, categories, transactions, budget, goals, coding, dProducts, dMoves, dExpenses, tAssets, tTrades, notes, todos, challenges, timetable] = await Promise.all([
     User.findById(userId).lean(),
     Account.find({ user: userId }).lean(),
     Category.find({ user: userId }).lean(),
@@ -12,6 +12,7 @@ async function fullExport(userId) {
     SavingsGoal.find({ user: userId }).lean(),
     CodingRecord.find({ user: userId }).lean(), DarazProduct.find({ user: userId }).lean(), DarazStockMovement.find({ user: userId }).lean(), DarazExpense.find({ user: userId }).lean(),
     TradingAsset.find({ user: userId }).lean(), TradingTransaction.find({ user: userId }).lean(), Note.find({ user: userId }).lean(), Todo.find({ user: userId }).lean(),
+    Challenge.find({ user: userId }).lean(), TimetableEntry.find({ user: userId }).lean(),
   ]);
   return {
     app: 'Grow More', schemaVersion: 3, appVersion: C.APP_VERSION, exportedAt: new Date().toISOString(),
@@ -19,7 +20,7 @@ async function fullExport(userId) {
     accounts: accounts.map(dto), categories: categories.map(dto), transactions: transactions.map(dto),
     budget: budget ? dto(budget) : null, savingsGoals: goals.map(dto),
     codingRecords: coding.map(dto), darazProducts: dProducts.map(dto), darazStockMovements: dMoves.map(dto), darazExpenses: dExpenses.map(dto),
-    tradingAssets: tAssets.map(dto), tradingTrades: tTrades.map(dto), notes: notes.map(dto), todos: todos.map(dto),
+    tradingAssets: tAssets.map(dto), tradingTrades: tTrades.map(dto), notes: notes.map(dto), todos: todos.map(dto), challenges: challenges.map(dto), timetable: timetable.map(dto),
   };
 }
 

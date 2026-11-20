@@ -28,6 +28,7 @@ exports.parseTodoList = (q = {}) => {
   const s = (x) => (typeof x === 'string' ? x : undefined);
   return {
     status: v.oneOf(s(q.status), ['pending', 'completed', 'all'], 'Status', { required: false, def: 'pending' }),
+    when: v.oneOf(s(q.when), ['all', 'today', 'tomorrow', 'old'], 'Date filter', { required: false, def: 'all' }),
     q: v.str(s(q.q), 'Search', { max: 80 }),
     page: Math.max(1, parseInt(q.page, 10) || 1), limit: Math.min(100, Math.max(1, parseInt(q.limit, 10) || 50)),
   };

@@ -120,3 +120,13 @@ Phase 2 ✅ Coding module · Daraz inventory, stock history, business expenses, 
 Phase 3 ✅ Trading & crypto (manual) · Notes · To-Do · advanced savings · advanced analytics.
 All planned modules are now built.
 Not built: importing/restoring a backup file, live market prices (by design), multi-user sign-in (data model is already per-user).
+
+## Challenges, Timetable, Reset, To-Do filters
+* **Challenges** (`/api/challenges`): pick the number of days, a pass mark (% of the day's score) and a list of daily tasks, each worth some points.
+  A day *passes* when ticked points / total points >= the pass mark; a past day below the mark *fails*; today stays "in progress" until it ends.
+  Several challenges can run at once. Opening one shows status cards (total, gone, left, passed, failed) above the day-by-day tasks.
+  Each played day stores a score snapshot, so adding or removing a task later never rewrites finished days. A finished challenge is *passed* when the passed days reach the same percentage of all days.
+* **Timetable** (`/api/timetable`): weekly routine, "from HH:MM to HH:MM do X" on chosen weekdays; overlapping slots are flagged.
+* **Reset** (`POST /api/me/reset`, Settings -> Reset): needs the PIN (counts toward the lockout) and `confirm: "RESET"`. Deletes every record of every module and re-creates the default categories; the PIN, sessions and preferences stay.
+* **To-Do filters**: `GET /api/todos?when=all|today|tomorrow|old` (+ counts per filter).
+* Tests: `npm test` (`tests/challenge.unit.test.js` is pure logic; `tests/phase4.test.js` needs MongoDB like the other API tests).

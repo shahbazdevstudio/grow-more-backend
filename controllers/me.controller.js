@@ -3,10 +3,12 @@ const authService = require('../services/authService');
 const accountService = require('../services/accountService');
 const categoryService = require('../services/categoryService');
 const budgetService = require('../services/budgetService');
+const resetService = require('../services/resetService');
 const { setCookie } = require('../services/tokenService');
 const { parseSettings, parsePin } = require('../validators/settings.validator');
 const { todayIn } = require('../utils/dates');
 const C = require('../config/constants');
+const ApiError = require('../utils/ApiError');
 
 /** One call after unlock: everything the app shell needs. */
 exports.bootstrap = async (req, res) => {
@@ -31,6 +33,13 @@ exports.changePin = async (req, res) => {
   res.json({ changed: true });
 };
 
+exports.resetData = async (req, res) => {
+  const pin = parsePin((req.body || {}).pin, 'PIN');
+  if ((req.body || {}).confirm !== 'RESET') throw new ApiError(400, 'Confirmation is missing.', 'VALIDATION');
+  const done = await authService.confirmPin(req.user.id, pin, () => resetService.resetAll(req.user.id));
+  res.json({ reset: true, removed: done.removed });
+};
+
 exports.revokeSessions = async (req, res) => {
   const user = await authService.revokeAllSessions(req.user.id);
   setCookie(res, user);
@@ -39,5 +48,5 @@ exports.revokeSessions = async (req, res) => {
 
 exports.info = (_req, res) => res.json({
   name: 'Grow More', version: C.APP_VERSION, phase: C.PHASE,
-  modules: { available: ['Dashboard', 'Transactions', 'Accounts', 'Analytics', 'Savings', 'Coding', 'Daraz', 'Trading', 'Notes', 'To-Do', 'Settings'], planned: [] },
+  modules: { available: ['Dashboard', 'Transactions', 'Accounts', 'Analytics', 'Savings', 'Coding', 'Daraz', 'Trading', 'Notes', 'To-Do', 'Challenges', 'Timetable', 'Settings'], planned: [] },
 });

@@ -54,6 +54,16 @@ function changePin(userId, currentPin, newPin) {
   });
 }
 
+/** Re-checks the PIN for a dangerous action (counts toward the lockout like any other wrong PIN). Runs `then` only if the PIN is right. */
+function confirmPin(userId, pin, then) {
+  return serialize(async () => {
+    const user = await User.findById(userId).select('+pinHash');
+    if (!user) throw new ApiError(401, 'Please enter your PIN.', 'LOCKED');
+    await checkPin(user, pin);
+    return then(user);
+  });
+}
+
 /** Public lock state for the PIN screen (never reveals anything about the PIN). */
 async function lockStatus() {
   const user = await User.findOne().sort({ createdAt: 1 }).select('lockedUntil failedAttempts').lean();
@@ -67,4 +77,4 @@ async function revokeAllSessions(userId) {
   return User.findByIdAndUpdate(userId, { $inc: { tokenVersion: 1 } }, { new: true });
 }
 
-module.exports = { login, changePin, lockStatus, revokeAllSessions };
+module.exports = { login, changePin, confirmPin, lockStatus, revokeAllSessions };
